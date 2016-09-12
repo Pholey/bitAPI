@@ -1,14 +1,14 @@
 
 -- +goose Up
 -- SQL in section 'Up' is executed when this migration is applied
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE "user" (
-    id uuid NOT NULL DEFAULT uuid_generate_v4(),
+    id SERIAL,
 
-    -- FIXME: Unique constraint on one of these?
-    username text,
+    username text UNIQUE,
     email text,
+
+    -- Why?
     name text,
 
     -- Our hash must be salty
@@ -31,4 +31,3 @@ CREATE TABLE "user" (
 -- +goose Down
 -- SQL section 'Down' is executed when this migration is rolled back
 DROP TABLE "user";
-DROP EXTENSION "uuid-ossp";

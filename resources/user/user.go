@@ -18,7 +18,7 @@ type User struct {
 	Iterations int    `db:"password_iterations"`
 	Hash       []byte `db:"password_hash"`
 	Password   string `json:"password"`
-	UserName   string `db:"username" json:"userName"`
+	UserName   string `db:"username" json:"username"`
 	Name       string `db:"name"     json:"name"`
 	Email      string `db:"email"    json:"email"`
 }

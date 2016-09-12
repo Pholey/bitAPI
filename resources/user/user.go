@@ -67,5 +67,6 @@ func Create(c *gin.Context) {
 	}
 
 	c.Writer.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	c.Writer.WriteHeader(http.StatusCreated)
+	// Since we were sent JSON, we should be nice and return an empty JSON object
+	c.JSON(http.StatusCreated, gin.H{})
 }

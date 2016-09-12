@@ -11,5 +11,5 @@ import (
 func main() {
 	// Start the server
 	println("Listening at :8080")
-	log.Fatal(resources.NewRouter().Run(":8080"))
+	log.Fatal(resources.NewRouter().Run(":9000"))
 }

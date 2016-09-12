@@ -5,18 +5,18 @@ import (
 	session "github.com/Pholey/bitAPI/resources/session"
 	socket "github.com/Pholey/bitAPI/resources/socket"
 	user "github.com/Pholey/bitAPI/resources/user"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo"
 )
 
 // Decorator middleware
-type beforeHandlers []func(func(*gin.Context)) func(*gin.Context)
+type beforeHandlers []func(echo.HandlerFunc) echo.HandlerFunc
 
 // Route - Struct containing all the info to initialize a route
 type Route struct {
 	Name        string
 	Method      string
 	Pattern     string
-	HandlerFunc func(*gin.Context)
+	HandlerFunc echo.HandlerFunc
 	Before      beforeHandlers
 }
 
@@ -26,14 +26,14 @@ var Routes = []Route{
 		"CreateUser",
 		"POST",
 		"/user",
-		user.Create,
+		echo.HandlerFunc(user.Create),
 		beforeHandlers{},
 	},
 	Route{
 		"CreateSession",
 		"POST",
 		"/session",
-		session.Create,
+		echo.HandlerFunc(session.Create),
 		beforeHandlers{},
 	},
 	Route{

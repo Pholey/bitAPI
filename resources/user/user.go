@@ -9,7 +9,7 @@ import (
 	db "github.com/Pholey/bitAPI/db"
 	pass "github.com/Pholey/bitAPI/resources/lib"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo"
 )
 
 // User - Struct for dealing with users
@@ -27,16 +27,12 @@ type User struct {
 type Users []User
 
 // Create - Create a user
-func Create(c *gin.Context) {
+func Create(c echo.Context) error {
 	// TODO(pholey): Abstract this out or find a better lib
-	body, err := ioutil.ReadAll(io.LimitReader(c.Request.Body, 1048576))
+	body, err := ioutil.ReadAll(io.LimitReader(c.Request().Body(), 1048576))
 
 	if err != nil {
 		// TODO(pholey): Proper error handing
-		panic(err)
-	}
-
-	if err := c.Request.Body.Close(); err != nil {
 		panic(err)
 	}
 
@@ -66,7 +62,9 @@ func Create(c *gin.Context) {
 		panic(err)
 	}
 
-	c.Writer.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	c.Response().Header().Set("Content-Type", "application/json;charset=UTF-8")
 	// Since we were sent JSON, we should be nice and return an empty JSON object
-	c.JSON(http.StatusCreated, gin.H{})
+	c.JSON(http.StatusCreated, struct{}{})
+
+	return nil;
 }

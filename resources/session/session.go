@@ -9,12 +9,20 @@ import (
 	redis "github.com/Pholey/bitAPI/redis"
 	pass "github.com/Pholey/bitAPI/resources/lib"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo"
 )
 
 type Session struct {
 	Password string `json:"password"`
 	UserName string `json:"userName"`
+}
+
+type Error struct {
+	Error string `json: "error"`
+}
+
+type Token struct {
+	Token string `json: "token"`
 }
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -27,17 +35,13 @@ func randSeq(n int) string {
 	return string(b)
 }
 
-func Create(c *gin.Context) {
+func Create(c echo.Context) error {
 
 	// TODO(pholey): Abstract this out or find a better lib
-	body, err := ioutil.ReadAll(io.LimitReader(c.Request.Body, 1048576))
+	body, err := ioutil.ReadAll(io.LimitReader(c.Request().Body(), 1048576))
 
 	if err != nil {
 		// TODO(pholey): Proper error handing
-		panic(err)
-	}
-
-	if err := c.Request.Body.Close(); err != nil {
 		panic(err)
 	}
 
@@ -54,7 +58,7 @@ func Create(c *gin.Context) {
 	if err != nil {
 		panic(err)
 	} else if isAuthed == false {
-		c.JSON(404, gin.H{"error": "User not found"})
+		c.JSON(404, Error{"User not found"})
 	} else {
 		// Create a new token (50 characters)
 		key = randSeq(50)
@@ -63,6 +67,8 @@ func Create(c *gin.Context) {
 			panic(err)
 		}
 
-		c.JSON(200, gin.H{"token": key})
+		c.JSON(200, Token{key})
 	}
+
+	return nil;
 }

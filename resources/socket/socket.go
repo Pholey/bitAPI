@@ -4,8 +4,9 @@ import (
 	"fmt"
 	http "net/http"
 
-	"github.com/gin-gonic/gin"
+	// "github.com/labstack/echo"
 	"github.com/gorilla/websocket"
+	"github.com/labstack/echo/engine/standard"
 )
 
 var wsupgrader = websocket.Upgrader{
@@ -32,10 +33,11 @@ func wshandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Entry is The handler of the upgrade request
-func Entry(c *gin.Context) {
+// func middleware(next echo.HandlerFunc) echo.HandlerFunc {
+// 	return func(c echo.Context) error {
+//
+// 	}
+// }
 
-	// We have determined they are a-OK to open a connection..
-	// pass it to the handler
-	wshandler(c.Writer, c.Request)
-}
+// Entry is The handler of the upgrade request
+var Entry = standard.WrapHandler(http.HandlerFunc(wshandler))

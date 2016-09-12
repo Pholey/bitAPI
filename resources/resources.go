@@ -1,7 +1,6 @@
 package resources
 
 import (
-	L "github.com/Pholey/bitAPI/logger"
 	routes "github.com/Pholey/bitAPI/resources/routes"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -13,6 +12,11 @@ func NewRouter() *echo.Echo {
 
 	// Deal with CORS
 	router.Use(middleware.CORS())
+
+	// Set up logger middleware
+	router.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "Method: ${method}\tURI: ${uri}\tStatus: ${status}\tLatency: ${latency_human}\n",
+	}))
 
 	handlerMap := map[string]func(string, echo.HandlerFunc, ...echo.MiddlewareFunc) {
 		"GET":     router.GET,
@@ -26,7 +30,7 @@ func NewRouter() *echo.Echo {
 
 	for _, route := range routes.Routes {
 		// Set up logging for each request
-		handler := L.Logger(route.HandlerFunc, route.Name)
+		handler := route.HandlerFunc
 
 		for _, beforeFunc := range route.Before {
 			handler = beforeFunc(handler)

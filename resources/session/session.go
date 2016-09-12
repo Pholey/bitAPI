@@ -10,15 +10,12 @@ import (
 	pass "github.com/Pholey/bitAPI/resources/lib"
 
 	"github.com/labstack/echo"
+	"net/http"
 )
 
 type Session struct {
 	Password string `json:"password"`
 	UserName string `json:"userName"`
-}
-
-type Error struct {
-	Error string `json: "error"`
 }
 
 type Token struct {
@@ -41,14 +38,13 @@ func Create(c echo.Context) error {
 	body, err := ioutil.ReadAll(io.LimitReader(c.Request().Body(), 1048576))
 
 	if err != nil {
-		// TODO(pholey): Proper error handing
-		panic(err)
+		return err
 	}
 
 	// Grab our session data
 	var req Session
 	if err := json.Unmarshal(body, &req); err != nil {
-		panic(err)
+		return err
 	}
 
 	isAuthed, err := pass.Auth(req.UserName, req.Password)
@@ -56,15 +52,15 @@ func Create(c echo.Context) error {
 	var key string
 	// TODO: This is horrendous
 	if err != nil {
-		panic(err)
+		return err
 	} else if isAuthed == false {
-		c.JSON(404, Error{"User not found"})
+		return echo.NewHTTPError(http.StatusNotFound)
 	} else {
 		// Create a new token (50 characters)
 		key = randSeq(50)
 		err := redis.Client.Set(key, req.UserName, 0).Err()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		c.JSON(200, Token{key})

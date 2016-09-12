@@ -32,14 +32,13 @@ func Create(c echo.Context) error {
 	body, err := ioutil.ReadAll(io.LimitReader(c.Request().Body(), 1048576))
 
 	if err != nil {
-		// TODO(pholey): Proper error handing
-		panic(err)
+		return err
 	}
 
 	// Grab our user data
 	var user User
 	if err := json.Unmarshal(body, &user); err != nil {
-		panic(err)
+		return err
 	}
 
 	// TODO(pholey): Password validation, refactoring
@@ -59,7 +58,7 @@ func Create(c echo.Context) error {
 	_ = (rows)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	c.Response().Header().Set("Content-Type", "application/json;charset=UTF-8")

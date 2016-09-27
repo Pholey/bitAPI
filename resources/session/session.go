@@ -9,12 +9,17 @@ import (
 	redis "github.com/Pholey/bitAPI/redis"
 	pass "github.com/Pholey/bitAPI/resources/lib"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo"
+	"net/http"
 )
 
 type Session struct {
 	Password string `json:"password"`
 	UserName string `json:"userName"`
+}
+
+type Token struct {
+	Token string `json: "token"`
 }
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -27,24 +32,19 @@ func randSeq(n int) string {
 	return string(b)
 }
 
-func Create(c *gin.Context) {
+func Create(c echo.Context) error {
 
 	// TODO(pholey): Abstract this out or find a better lib
-	body, err := ioutil.ReadAll(io.LimitReader(c.Request.Body, 1048576))
+	body, err := ioutil.ReadAll(io.LimitReader(c.Request().Body(), 1048576))
 
 	if err != nil {
-		// TODO(pholey): Proper error handing
-		panic(err)
-	}
-
-	if err := c.Request.Body.Close(); err != nil {
-		panic(err)
+		return err
 	}
 
 	// Grab our session data
 	var req Session
 	if err := json.Unmarshal(body, &req); err != nil {
-		panic(err)
+		return err
 	}
 
 	isAuthed, err := pass.Auth(req.UserName, req.Password)
@@ -52,17 +52,19 @@ func Create(c *gin.Context) {
 	var key string
 	// TODO: This is horrendous
 	if err != nil {
-		panic(err)
+		return err
 	} else if isAuthed == false {
-		c.JSON(404, gin.H{"error": "User not found"})
+		return echo.NewHTTPError(http.StatusNotFound)
 	} else {
 		// Create a new token (50 characters)
 		key = randSeq(50)
 		err := redis.Client.Set(key, req.UserName, 0).Err()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
-		c.JSON(200, gin.H{"token": key})
+		c.JSON(200, Token{key})
 	}
+
+	return nil;
 }

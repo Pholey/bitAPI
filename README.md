@@ -23,7 +23,7 @@ API for bit.dj
 `POST /user`
 ```json
 {
-  "userName": "Bob",
+  "username": "Bob",
   "email": "BobAndAllThingsBob@Bob.com",
   "password": "Boberson"
 }
@@ -36,7 +36,7 @@ API for bit.dj
 `POST /session`
 ```json
 {
-  "userName": "Bob",
+  "username": "Bob",
   "password": "Boberson"
 }
 

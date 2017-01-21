@@ -9,7 +9,7 @@ import (
 	big "math/big"
 	"strings"
 
-	"github.com/Pholey/Exgo/db"
+	"github.com/Pholey/bitAPI/db"
 	pbkdf2 "golang.org/x/crypto/pbkdf2"
 )
 

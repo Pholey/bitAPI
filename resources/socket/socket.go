@@ -6,7 +6,7 @@ import (
 
 	// "github.com/labstack/echo"
 	"github.com/gorilla/websocket"
-	"github.com/labstack/echo/engine/standard"
+	"github.com/labstack/echo"
 )
 
 var wsupgrader = websocket.Upgrader{
@@ -40,4 +40,4 @@ func wshandler(w http.ResponseWriter, r *http.Request) {
 // }
 
 // Entry is The handler of the upgrade request
-var Entry = standard.WrapHandler(http.HandlerFunc(wshandler))
+var Entry = echo.WrapHandler(http.HandlerFunc(wshandler))

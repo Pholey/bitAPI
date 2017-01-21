@@ -1,9 +1,6 @@
 package session
 
 import (
-	json "encoding/json"
-	"io"
-	"io/ioutil"
 	"math/rand"
 
 	redis "github.com/Pholey/bitAPI/redis"
@@ -33,17 +30,9 @@ func randSeq(n int) string {
 }
 
 func Create(c echo.Context) error {
-
-	// TODO(pholey): Abstract this out or find a better lib
-	body, err := ioutil.ReadAll(io.LimitReader(c.Request().Body(), 1048576))
-
-	if err != nil {
-		return err
-	}
-
 	// Grab our session data
 	var req Session
-	if err := json.Unmarshal(body, &req); err != nil {
+	if err := c.Bind(req); err != nil {
 		return err
 	}
 

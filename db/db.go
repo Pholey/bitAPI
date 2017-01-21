@@ -12,6 +12,7 @@ import (
 
 type DatabaseConnection struct {
 	user     string
+	password string
 	host     string
 	database string
 }
@@ -25,13 +26,15 @@ func init() {
 
 	ConnectionInfo = DatabaseConnection{
 		info["user"].(string),
+		info["password"].(string),
 		info["host"].(string),
 		info["database"].(string),
 	}
 
 	connString := fmt.Sprintf(
-		"postgres://%s:@%s/%s?sslmode=disable",
+		"postgres://%s:%s@%s/%s?sslmode=disable",
 		info["user"],
+		info["password"],
 		info["host"],
 		info["database"],
 	)

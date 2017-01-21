@@ -12,7 +12,7 @@ import (
 
 func UserRequired(inner echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		authHeader := c.Request().Header().Get("Authorization")
+		authHeader := c.Request().Header["Authorization"][0]
 		token, parseErr := pass.ParseBasic(authHeader)
 		fmt.Print("we got teh token!", token)
 		if parseErr != nil {

@@ -1,7 +1,7 @@
 package redis
 
 import redis "gopkg.in/redis.v3"
-import "github.com/Pholey/Exgo/config"
+import "github.com/Pholey/bitAPI/config"
 import "fmt"
 
 var Client *redis.Client

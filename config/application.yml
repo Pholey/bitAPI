@@ -1,7 +1,7 @@
 database:
   user: postgres
   host: localhost
-  database: exgo
+  database: bitdj
 
 redis:
   host: localhost

@@ -16,7 +16,7 @@ API for bit.dj
   `$ go build`
 
   Run it:
-  `./Exgo`
+  `./bitAPI`
 
 
 ## Resources

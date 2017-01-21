@@ -1,9 +1,6 @@
 package user
 
 import (
-	json "encoding/json"
-	"io"
-	"io/ioutil"
 	http "net/http"
 
 	db "github.com/Pholey/bitAPI/db"
@@ -28,16 +25,9 @@ type Users []User
 
 // Create - Create a user
 func Create(c echo.Context) error {
-	// TODO(pholey): Abstract this out or find a better lib
-	body, err := ioutil.ReadAll(io.LimitReader(c.Request().Body(), 1048576))
-
-	if err != nil {
-		return err
-	}
-
 	// Grab our user data
 	var user User
-	if err := json.Unmarshal(body, &user); err != nil {
+	if err:= c.Bind(user); err != nil {
 		return err
 	}
 

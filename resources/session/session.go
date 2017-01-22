@@ -32,7 +32,7 @@ func randSeq(n int) string {
 func Create(c echo.Context) error {
 	// Grab our session data
 	var req Session
-	if err := c.Bind(req); err != nil {
+	if err := c.Bind(&req); err != nil {
 		return err
 	}
 

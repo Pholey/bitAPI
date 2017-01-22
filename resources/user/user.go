@@ -27,7 +27,7 @@ type Users []User
 func Create(c echo.Context) error {
 	// Grab our user data
 	var user User
-	if err:= c.Bind(user); err != nil {
+	if err:= c.Bind(&user); err != nil {
 		return err
 	}
 

@@ -20,6 +20,8 @@ type Route struct {
 	Before      beforeHandlers
 }
 
+var sock, sock_err = socket.NewSocket()
+
 // Routes - Array of routes
 var Routes = []Route{
 	Route{
@@ -40,7 +42,14 @@ var Routes = []Route{
 		"Upgrade Socket",
 		"GET",
 		"/socket",
-		socket.Entry,
+		sock.Listen,
 		beforeHandlers{mw.UserRequired},
+	},
+	Route{
+		"MessageChannel",
+		"POST",
+		"/channel/:id",
+		sock.HTTPForward,
+		beforeHandlers{},
 	},
 }

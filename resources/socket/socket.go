@@ -7,6 +7,7 @@ import (
 	"golang.org/x/net/websocket"
 	"github.com/labstack/echo"
 	"github.com/speps/go-hashids"
+	mw "github.com/Pholey/bitAPI/resources/middleware"
 )
 
 // var wsupgrader = websocket.Upgrader{
@@ -124,23 +125,7 @@ func (s *Socket) send(msg *Message) error {
 	return nil
 }
 
-func (s *Socket) Listen(c echo.Context) error {
-	websocket.Handler(func(ws *websocket.Conn) {
-		defer func() {
-			err := ws.Close()
-			if err != nil {
-				s.errCh <- err
-			}
-		}()
-
-		channel, err := NewChannel(ws, s)
-		if err != nil {
-			s.errCh <- err
-		}
-		s.Add(channel)
-		channel.Listen()
-	}).ServeHTTP(c.Response(), c.Request())
-
+func socketLoop(s *Socket) error {
 	for {
 		select {
 		case c := <-s.addCh:
@@ -151,10 +136,37 @@ func (s *Socket) Listen(c echo.Context) error {
 			s.send(msg)
 		case err := <-s.errCh:
 			fmt.Println("Error:", err.Error())
+			return err
 		case <-s.doneCh:
 			return nil
 		}
 	}
+}
+
+func (s *Socket) Listen(c echo.Context) error {
+	id := c.Param("id")
+
+	websocket.Handler(func(ws *websocket.Conn) {
+		closeSocket := func() {
+			err := ws.Close()
+			if err != nil {
+				s.errCh <- err
+			}
+		}
+
+		cu := c.(*mw.ContextWithUser)
+
+		channel, err := NewChannel(ws, s, cu.UserId, id)
+		if err != nil {
+			closeSocket()
+			return
+		}
+		go socketLoop(s)
+		s.Add(channel)
+		channel.Listen()
+	}).ServeHTTP(c.Response(), c.Request())
+
+	return nil
 }
 
 func (s *Socket) GetChannels(c echo.Context) error {

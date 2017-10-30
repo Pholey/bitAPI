@@ -4,12 +4,10 @@ import (
   "io"
   "fmt"
   "golang.org/x/net/websocket"
-  "github.com/speps/go-hashids"
+  db "github.com/Pholey/bitAPI/db"
 )
 
 const channelBufSize = 4096
-var channelMaxId int64 = 0
-var channelHd = &hashids.HashIDData{hashids.DefaultAlphabet, 64, "channel"}
 
 type Channel struct {
   id         string
@@ -21,9 +19,19 @@ type Channel struct {
   doneCh     chan bool
 }
 
-func NewChannel(ws *websocket.Conn, socket *Socket) (*Channel, error) {
+func NewChannel(ws *websocket.Conn, socket *Socket, userId int64, channelName string) (*Channel, error) {
   if ws == nil {
     return nil, fmt.Errorf("No socket provided for new channel.")
+  }
+
+  _, err := db.Session.
+    InsertInto("user_channel").
+    Columns("id", "channel_name").
+    Values(userId, channelName).
+    Exec()
+
+  if (err != nil) {
+    return nil, err
   }
 
   outbox := make(map[string][]*Message)
@@ -32,15 +40,7 @@ func NewChannel(ws *websocket.Conn, socket *Socket) (*Channel, error) {
   ch := make(chan *Message, channelBufSize)
   doneCh := make(chan bool)
 
-  h := hashids.NewWithData(channelHd)
-  channelMaxId++
-  e, err := h.EncodeInt64([]int64{channelMaxId})
-
-  if err != nil {
-    return nil, err
-  }
-
-  return &Channel{e, outbox, recipients, ws, socket, ch, doneCh}, nil
+  return &Channel{channelName, outbox, recipients, ws, socket, ch, doneCh}, nil
 }
 
 func (c *Channel) HasRecipient(id string) bool {
@@ -111,6 +111,7 @@ func (c *Channel) listenRead() {
     default:
       var msg = &Message{}
       err := websocket.JSON.Receive(c.ws, msg)
+      fmt.Println(msg)
       if err == io.EOF {
         c.doneCh <- true
       } else if err != nil {

@@ -2,11 +2,9 @@ package db
 
 import (
 	"github.com/Pholey/bitAPI/config"
-	_ "database/sql"
 	"fmt"
 
-	sq "github.com/Masterminds/squirrel"
-	"github.com/jmoiron/sqlx"
+	dbr "github.com/gocraft/dbr"
 	_ "github.com/lib/pq"
 )
 
@@ -17,8 +15,7 @@ type DatabaseConnection struct {
 	database string
 }
 
-var Client *sqlx.DB
-var Sq sq.StatementBuilderType
+var Session *dbr.Session
 var ConnectionInfo DatabaseConnection
 
 func init() {
@@ -39,13 +36,11 @@ func init() {
 		info["database"],
 	)
 
-	Sq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-
-	client, err := sqlx.Connect("postgres", connString)
+	conn, err := dbr.Open("postgres", connString, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	Client = client
+	Session = conn.NewSession(nil)
 	println("Connected to Postgres")
 }

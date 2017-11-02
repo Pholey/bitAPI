@@ -7,6 +7,7 @@ import (
 	"golang.org/x/net/websocket"
 	"github.com/labstack/echo"
 	"github.com/speps/go-hashids"
+	mw "github.com/Pholey/bitAPI/resources/middleware"
 )
 
 // var wsupgrader = websocket.Upgrader{
@@ -82,15 +83,6 @@ func (s *Socket) HasRecipient(id string) bool {
 }
 
 func (s *Socket) Add(c *Channel) {
-	// queue, ok := s.outbox[c.id]
-	// if ok {
-	// 	for _, msg := range(queue) {
-	// 		err := c.Write(msg)
-	// 		if (err != nil) {
-	// 			break
-	// 		}
-	// 	}
-	// }
 	s.addCh <- c
 }
 
@@ -112,35 +104,12 @@ func (s *Socket) send(msg *Message) error {
 		if ok {
 			channel.Write(msg)
 		}
-		// else {
-		// 	outBuf, ok := s.outbox[msg.To]
-		// 	if !ok {
-		// 		outBuf = make([]*Message)
-		// 	}
-		// 	s.outbox[msg.To] = append(outBuf, msg)
-		// }
 	} // Should have an else here for messages to the server itself
 
 	return nil
 }
 
-func (s *Socket) Listen(c echo.Context) error {
-	websocket.Handler(func(ws *websocket.Conn) {
-		defer func() {
-			err := ws.Close()
-			if err != nil {
-				s.errCh <- err
-			}
-		}()
-
-		channel, err := NewChannel(ws, s)
-		if err != nil {
-			s.errCh <- err
-		}
-		s.Add(channel)
-		channel.Listen()
-	}).ServeHTTP(c.Response(), c.Request())
-
+func socketLoop(s *Socket) error {
 	for {
 		select {
 		case c := <-s.addCh:
@@ -151,14 +120,49 @@ func (s *Socket) Listen(c echo.Context) error {
 			s.send(msg)
 		case err := <-s.errCh:
 			fmt.Println("Error:", err.Error())
+			return err
 		case <-s.doneCh:
 			return nil
 		}
 	}
 }
 
-func (s *Socket) GetChannels(c echo.Context) error {
+func (s *Socket) Listen(c echo.Context) error {
+	id := c.Param("id")
+
+	websocket.Handler(func(ws *websocket.Conn) {
+		closeSocket := func() {
+			err := ws.Close()
+			if err != nil {
+				s.errCh <- err
+			}
+		}
+
+		cu := c.(*mw.ContextWithUser)
+
+		channel, err := NewChannel(ws, s, cu.UserId, id)
+		if err != nil {
+			closeSocket()
+			return
+		}
+		go socketLoop(s)
+		s.Add(channel)
+		channel.Listen()
+	}).ServeHTTP(c.Response(), c.Request())
+
 	return nil
+}
+
+func (s *Socket) GetChannels(c echo.Context) error {
+	channelnames := make([]string, len(s.channels))
+
+	i := 0
+	for k := range s.channels {
+		channelnames[i] = k
+		i++
+	}
+
+	return c.JSON(http.StatusOK, channelnames)
 }
 
 func (s *Socket) HTTPForward(c echo.Context) error {
@@ -169,14 +173,13 @@ func (s *Socket) HTTPForward(c echo.Context) error {
 		return c.NoContent(http.StatusNotFound)
 	}
 
-	msgBody := ""
-	err := c.Bind(&msgBody)
+	msgBody := &SDP{}
+	err := c.Bind(msgBody)
 	if err != nil {
 		return err
 	}
 
 	msgCh := make(chan *Message)
-	doneCh := make(chan bool)
 
 	h := hashids.NewWithData(msgHd)
 	msgMaxId++
@@ -185,11 +188,9 @@ func (s *Socket) HTTPForward(c echo.Context) error {
 		return err
 	}
 
-	go channel.Connect(msgCh, doneCh)
-
+	go channel.Connect(msgCh)
 	msgCh <- &Message{To: id, From: e, Body: msgBody}
 	response := <-msgCh
-	doneCh <- true
 
-	return c.JSON(200, response)
+	return c.JSON(http.StatusOK, response)
 }

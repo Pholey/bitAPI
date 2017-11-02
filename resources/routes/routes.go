@@ -39,11 +39,18 @@ var Routes = []Route{
 		beforeHandlers{},
 	},
 	Route{
-		"Upgrade Socket",
+		"UpgradeSocket",
 		"GET",
-		"/socket",
+		"/channel/:id",
 		sock.Listen,
-		beforeHandlers{mw.UserRequired},
+		beforeHandlers{mw.UserRequiredToken},
+	},
+	Route {
+		"GetChannels",
+		"GET",
+		"/channels",
+		sock.GetChannels,
+		beforeHandlers{},
 	},
 	Route{
 		"MessageChannel",

@@ -11,7 +11,6 @@ const channelBufSize = 4096
 
 type Channel struct {
   id         string
-  outbox     map[string][]*Message
   recipients map[string]chan *Message
   ws         *websocket.Conn
   socket     *Socket
@@ -25,26 +24,24 @@ func NewChannel(ws *websocket.Conn, socket *Socket, userId int64, channelName st
   }
 
   _, err := db.Session.
-    InsertInto("user_channel").
-    Columns("id", "channel_name").
-    Values(userId, channelName).
+    InsertBySql("INSERT INTO user_channel (id, channel_name) VALUES (?, ?) ON CONFLICT (channel_name) DO NOTHING", userId, channelName).
     Exec()
 
   if (err != nil) {
     return nil, err
   }
 
-  outbox := make(map[string][]*Message)
   recipients := make(map[string]chan *Message)
 
   ch := make(chan *Message, channelBufSize)
   doneCh := make(chan bool)
 
-  return &Channel{channelName, outbox, recipients, ws, socket, ch, doneCh}, nil
+  return &Channel{channelName, recipients, ws, socket, ch, doneCh}, nil
 }
 
 func (c *Channel) HasRecipient(id string) bool {
   _, ok := c.recipients[id]
+  fmt.Println("Really? ", ok)
   return ok
 }
 
@@ -59,22 +56,12 @@ func (c *Channel) Write(msg *Message) error {
   return nil
 }
 
-func (c *Channel) Connect(msgCh chan *Message, doneCh chan bool) error {
+func (c *Channel) Connect(msgCh chan *Message) error {
   for {
     select {
     case msg := <-msgCh:
       c.recipients[msg.From] = msgCh
       c.Write(msg)
-
-      // queue, ok := c.outbox[msg.From]
-      // if ok {
-      //   for _, msg := range(queue) {
-      //     msgCh <- msg
-      //   }
-      // }
-    case <-doneCh:
-      c.doneCh <- true
-      return nil
     }
   }
 }
@@ -109,25 +96,19 @@ func (c *Channel) listenRead() {
       c.doneCh <- true
       return
     default:
-      var msg = &Message{}
+
+      var msg = &Message{Body: &SDP{}}
       err := websocket.JSON.Receive(c.ws, msg)
-      fmt.Println(msg)
       if err == io.EOF {
         c.doneCh <- true
       } else if err != nil {
         c.socket.Err(err)
       } else if recipient, ok := c.recipients[msg.To]; ok {
         recipient <- msg
+        delete(c.recipients, msg.To)
       } else if c.socket.HasRecipient(msg.To) {
         c.socket.send(msg)
       }
-      // else {
-      //   outBuf, ok := c.outbox[msg.To]
-      //   if !ok {
-      //     outBuf = make([]*Message)
-      //   }
-      //   c.outbox[msg.To] = append(outBuf, msg)
-      // }
     }
   }
 }
